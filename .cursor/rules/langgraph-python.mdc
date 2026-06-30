@@ -1,0 +1,17 @@
+---
+description: Паттерны LangGraph-агентов в Python-файлах проекта
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python-агенты help_agent
+
+При редактировании `*.py` с агентами:
+
+1. Применяй skill `langgraph-agent-development`
+2. Следуй паттернам `airline_react_agent.py`
+3. Tools: `@tool`, docstring на русском, return `json.dumps(..., ensure_ascii=False)`
+4. Секреты только через `load_dotenv()` и `os.getenv`
+5. Новая логика — с тестом в `tests/`
+
+Объясняй изменения пользователю на русском.
