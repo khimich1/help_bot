@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from interior_studio.agent.tools import knowledge as knowledge_tools
 from interior_studio.agent.tools import projects as project_tools
 from interior_studio.agent.tools import tasks as task_tools
+from interior_studio.agent.tools import web_search as web_search_tools
 
 
 def make_tools(session: Session, user_id: int) -> list[BaseTool]:
@@ -39,6 +40,11 @@ def make_tools(session: Session, user_id: int) -> list[BaseTool]:
             "search_project_knowledge",
             knowledge_tools.search_project_knowledge_impl,
             knowledge_tools.SEARCH_PROJECT_KNOWLEDGE_SCHEMA,
+        ),
+        (
+            "search_web",
+            web_search_tools.search_web_impl,
+            web_search_tools.SEARCH_WEB_SCHEMA,
         ),
     ]
 

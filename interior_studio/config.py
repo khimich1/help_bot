@@ -32,6 +32,11 @@ LOCAL_EMBEDDING_MODEL = os.getenv(
 )
 KNOWLEDGE_TOP_K = int(os.getenv("KNOWLEDGE_TOP_K", "5"))
 
+# Web search (DuckDuckGo MVP)
+WEB_SEARCH_PROVIDER = os.getenv("WEB_SEARCH_PROVIDER", "duckduckgo").strip().lower()
+WEB_SEARCH_MAX_RESULTS = int(os.getenv("WEB_SEARCH_MAX_RESULTS", "5"))
+WEB_SEARCH_REGION = os.getenv("WEB_SEARCH_REGION", "ru-ru").strip()
+
 
 def _parse_allowed_user_ids() -> list[int]:
     raw = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "111111111,222222222")

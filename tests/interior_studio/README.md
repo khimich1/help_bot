@@ -23,6 +23,10 @@ pytest tests/interior_studio/ -v
 | `test_voice_pipeline.py` | Whisper (mock) |
 | `test_scheduler.py` | Дайджест, дедлайны |
 | `test_tool_calling.py` | 11 кейсов tool calling (mock LLM) |
+| `test_web_search.py` | Web search service (mock client) |
+| `test_tools_web_search.py` | Tool `search_web` |
+| `test_web_tool_calling.py` | Web cascade / negative (mock LLM) |
+| `test_knowledge_tool_calling.py` | Knowledge vs операционка (mock LLM) |
 
 ## Live-тесты (опционально)
 
@@ -36,6 +40,15 @@ python -m interior_studio.agent.cli --trace "По Ивановым: заказа
 python -m interior_studio.agent.cli --trace "Что просрочено?"
 python -m interior_studio.agent.cli --trace "Покажи проекты"
 ```
+
+Web search (срез 4.0, нужен интернет для DDG):
+
+```bash
+python -m interior_studio.agent.cli --trace "Какой интернет есть в ЖК Шкиперский?"
+python -m interior_studio.agent.cli --trace "Найди в интернете аналоги плитки Kerama Marazzi 60x60"
+```
+
+Чеклист ручного smoke: [`docs/checklists/web-search-smoke.md`](../../docs/checklists/web-search-smoke.md).
 
 Рекомендуемые фразы для ручной live-проверки:
 
