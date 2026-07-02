@@ -56,6 +56,17 @@ def test_search_web_empty_results():
     assert data == {"ok": True, "query": "нет результатов", "results": []}
 
 
+def test_search_web_no_results_not_treated_as_hard_error():
+    """Пустой ответ клиента — ok:true results:[], не ok:false."""
+    client = MockWebClient(results=[])
+    raw = search_web("провайдер интернета ЖК", client=client)
+    data = json.loads(raw)
+
+    assert data["ok"] is True
+    assert data["results"] == []
+    assert "Web search failed" not in json.dumps(data)
+
+
 def test_search_web_provider_error():
     client = MockWebClient(error=RuntimeError("DDG blocked"))
     raw = search_web("тест", client=client)

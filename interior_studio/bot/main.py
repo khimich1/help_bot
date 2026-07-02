@@ -32,7 +32,8 @@ from interior_studio.bot.disambiguation import (
 )
 from interior_studio.bot.session import SessionStore
 from interior_studio.bot.voice import WHISPER_ERROR_MESSAGE, transcribe_telegram_voice
-from interior_studio.config import ALLOWED_USER_IDS
+from interior_studio.agent.tools.web_search import reset_web_search_guard
+from interior_studio.config import AGENT_RECURSION_LIMIT, ALLOWED_USER_IDS
 from interior_studio.db.connection import create_db_engine, create_session_factory, init_schema
 from interior_studio.scheduler.jobs import setup_scheduler
 from interior_studio.services.user_context import set_active_project, upsert_user
@@ -84,7 +85,11 @@ def invoke_agent(
     agent = runtime.create_agent(db, user_id)
     messages = list(history)
     messages.append(HumanMessage(content=user_text))
-    result = agent.invoke({"messages": messages}, config={"recursion_limit": 10})
+    reset_web_search_guard(db)
+    result = agent.invoke(
+        {"messages": messages},
+        config={"recursion_limit": AGENT_RECURSION_LIMIT},
+    )
     db.commit()
     reply = extract_agent_reply(result["messages"])
     return reply, result["messages"]

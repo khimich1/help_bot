@@ -37,6 +37,9 @@ WEB_SEARCH_PROVIDER = os.getenv("WEB_SEARCH_PROVIDER", "duckduckgo").strip().low
 WEB_SEARCH_MAX_RESULTS = int(os.getenv("WEB_SEARCH_MAX_RESULTS", "5"))
 WEB_SEARCH_REGION = os.getenv("WEB_SEARCH_REGION", "ru-ru").strip()
 
+# ReAct graph
+AGENT_RECURSION_LIMIT = int(os.getenv("AGENT_RECURSION_LIMIT", "20"))
+
 
 def _parse_allowed_user_ids() -> list[int]:
     raw = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "111111111,222222222")

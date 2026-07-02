@@ -12,14 +12,40 @@ import argparse
 import json
 import time
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from sqlalchemy.orm import sessionmaker
 
 from interior_studio.agent.graph import create_studio_agent
 from interior_studio.agent.prompt import build_system_prompt
 from interior_studio.agent.tools import make_tools
-from interior_studio.config import get_default_cli_user_id
+from interior_studio.agent.tools.web_search import reset_web_search_guard
+from interior_studio.config import AGENT_RECURSION_LIMIT, get_default_cli_user_id
 from interior_studio.db.connection import create_db_engine, init_schema
+
+
+def _agent_invoke_config() -> dict:
+    return {"recursion_limit": AGENT_RECURSION_LIMIT}
+
+
+def _print_trace_message(message, step_num: int, tool_count: int) -> int:
+    """Печатает один шаг trace; возвращает обновлённый tool_count."""
+    if isinstance(message, AIMessage):
+        if message.tool_calls:
+            for tc in message.tool_calls:
+                tool_count += 1
+                print(f"\n--- Шаг TAO {step_num} ---")
+                if message.content:
+                    print(f"   МЫСЛЬ:      {str(message.content)[:200]}")
+                args = json.dumps(tc["args"], ensure_ascii=False)
+                print(f"   ДЕЙСТВИЕ:   {tc['name']}({args})")
+        elif message.content:
+            print("\n--- Финальный ответ ---")
+            print(f"   {message.content[:500]}")
+    elif isinstance(message, ToolMessage):
+        preview = message.content[:150] if len(message.content) > 150 else message.content
+        name = getattr(message, "name", "tool")
+        print(f"   НАБЛЮДЕНИЕ ({name}): {preview}")
+    return tool_count
 
 
 def _print_step(message) -> None:
@@ -39,48 +65,44 @@ def _print_step(message) -> None:
         print(message.content)
 
 
-def run_and_trace(agent, query: str, history: list | None = None):
-    """Запуск с пошаговым выводом TAO-петли."""
+def run_and_trace(agent, query: str, session, history: list | None = None):
+    """Запуск с пошаговым выводом TAO-петли (stream — шаги видны до падения)."""
     print(f"Пользователь: {query}")
     print("=" * 60)
 
     messages = list(history or [])
     messages.append(HumanMessage(content=query))
 
+    reset_web_search_guard(session)
     start_time = time.time()
-    result = agent.invoke(
-        {"messages": messages},
-        config={"recursion_limit": 10},
-    )
-    elapsed = time.time() - start_time
-
     step_num = 0
     tool_count = 0
-    for msg in result["messages"][len(messages) - 1 :]:
-        msg_type = type(msg).__name__
-        if msg_type == "AIMessage" and getattr(msg, "tool_calls", None):
-            step_num += 1
-            for tc in msg.tool_calls:
-                tool_count += 1
-                print(f"\n--- Шаг TAO {step_num} ---")
-                if msg.content:
-                    print(f"   МЫСЛЬ:      {str(msg.content)[:200]}")
-                args = json.dumps(tc["args"], ensure_ascii=False)
-                print(f"   ДЕЙСТВИЕ:   {tc['name']}({args})")
-        elif msg_type == "ToolMessage":
-            preview = msg.content[:150] if len(msg.content) > 150 else msg.content
-            print(f"   НАБЛЮДЕНИЕ: {preview}")
-        elif msg_type == "AIMessage" and not getattr(msg, "tool_calls", None):
-            if msg.content:
-                print("\n--- Финальный ответ ---")
-                print(f"   {msg.content[:500]}")
+    result_messages = list(messages)
 
+    for chunk in agent.stream(
+        {"messages": messages},
+        config=_agent_invoke_config(),
+        stream_mode="updates",
+    ):
+        for node_name, update in chunk.items():
+            if node_name == "agent":
+                msg = update["messages"][-1]
+                result_messages.append(msg)
+                if isinstance(msg, AIMessage) and msg.tool_calls:
+                    step_num += 1
+                tool_count = _print_trace_message(msg, step_num, tool_count)
+            elif node_name == "tools":
+                for msg in update["messages"]:
+                    result_messages.append(msg)
+                    tool_count = _print_trace_message(msg, step_num, tool_count)
+
+    elapsed = time.time() - start_time
     print(f"\n{'=' * 60}")
     print(
         f"Циклов TAO: {step_num} | Вызовов инструментов: {tool_count} "
         f"| Время: {elapsed:.2f}с"
     )
-    return result
+    return {"messages": result_messages}
 
 
 def create_cli_session_and_agent(user_id: int):
@@ -112,14 +134,15 @@ def main() -> None:
 
     try:
         if args.trace and query:
-            run_and_trace(agent, query)
+            run_and_trace(agent, query, session)
             session.commit()
             return
 
         if query:
+            reset_web_search_guard(session)
             result = agent.invoke(
                 {"messages": [HumanMessage(content=query)]},
-                config={"recursion_limit": 10},
+                config=_agent_invoke_config(),
             )
             session.commit()
             for msg in result["messages"]:
@@ -142,9 +165,10 @@ def main() -> None:
                 continue
 
             history.append(HumanMessage(content=user_input))
+            reset_web_search_guard(session)
             result = agent.invoke(
                 {"messages": history},
-                config={"recursion_limit": 10},
+                config=_agent_invoke_config(),
             )
             session.commit()
 

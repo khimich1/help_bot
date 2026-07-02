@@ -11,6 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from interior_studio.agent.graph import create_studio_agent
 from interior_studio.agent.prompt import build_system_prompt
 from interior_studio.agent.tools import make_tools
+from interior_studio.agent.tools.web_search import reset_web_search_guard
 from interior_studio.services import project_service, user_context
 from tests.interior_studio.test_tool_calling import _tool_call
 
@@ -60,6 +61,7 @@ def _run_first_tool(db_session, user_id: int, query: str, tool_name: str, tool_a
             ),
         ),
     ):
+        reset_web_search_guard(db_session)
         agent = create_studio_agent(tools, prompt)
         agent.invoke(
             {"messages": [HumanMessage(content=query)]},
@@ -106,6 +108,7 @@ def _run_tool_sequence(db_session, user_id: int, query: str, llm_steps: list[AIM
             ),
         ),
     ):
+        reset_web_search_guard(db_session)
         agent = create_studio_agent(tools, prompt)
         result = agent.invoke(
             {"messages": [HumanMessage(content=query)]},
@@ -220,3 +223,62 @@ def test_prompt_contains_web_rules():
     assert "загугли" in prompt.lower()
     assert "поищи в сети" in prompt.lower()
     assert "Источник: {url}" in prompt
+    assert "не более одного раза" in prompt.lower()
+
+
+def test_search_web_not_called_twice_on_empty_results(db_session):
+    """Guard: повторный search_web от LLM не дергает DDG и граф завершается."""
+    project = project_service.create_project(db_session, "ЖК Шкиперский")
+    user_context.set_active_project(db_session, 111111111, project.id)
+    db_session.commit()
+
+    empty_web = json.dumps(
+        {"ok": True, "query": "интернет ЖК", "results": []},
+        ensure_ascii=False,
+    )
+    mock_web_service = MagicMock(return_value=empty_web)
+
+    steps = [
+        _tool_call("search_project_knowledge", {"query": "интернет провайдеры ЖК"}),
+        _tool_call("search_web", {"query": "интернет провайдеры ЖК Шкиперский"}),
+        _tool_call("search_web", {"query": "провайдеры интернета Шкиперский другой запрос"}),
+        AIMessage(content="Не удалось выполнить поиск в интернете. Попробуй позже или уточни запрос."),
+    ]
+
+    from interior_studio.services.user_context import upsert_user
+
+    upsert_user(db_session, 111111111)
+    db_session.commit()
+
+    tools = make_tools(db_session, 111111111)
+    prompt = build_system_prompt(111111111)
+
+    mock_llm = MagicMock()
+    mock_bound = MagicMock()
+    mock_bound.invoke.side_effect = steps
+    mock_llm.bind_tools.return_value = mock_bound
+    mock_llm.invoke.return_value = AIMessage(content="размышляю")
+
+    with (
+        patch("interior_studio.agent.graph.create_chat_llm", return_value=mock_llm),
+        patch("interior_studio.knowledge.search.KnowledgeStore", return_value=_empty_knowledge_store()),
+        patch("interior_studio.agent.tools.web_search.search_web", mock_web_service),
+    ):
+        reset_web_search_guard(db_session)
+        agent = create_studio_agent(tools, prompt)
+        result = agent.invoke(
+            {"messages": [HumanMessage(content="Какой интернет есть в ЖК Шкиперский?")]},
+            config={"recursion_limit": 10},
+        )
+
+    assert mock_web_service.call_count == 1
+    tool_names = [
+        tc["name"]
+        for msg in result["messages"]
+        if isinstance(msg, AIMessage) and msg.tool_calls
+        for tc in msg.tool_calls
+    ]
+    assert tool_names.count("search_web") == 2
+    final = [msg for msg in result["messages"] if isinstance(msg, AIMessage) and msg.content and not msg.tool_calls]
+    assert final
+    assert "поиск" in final[-1].content.lower()

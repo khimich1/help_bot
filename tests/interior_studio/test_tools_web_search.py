@@ -6,10 +6,11 @@ import json
 from unittest.mock import MagicMock
 
 from interior_studio.agent.tools import make_tools
-from interior_studio.agent.tools.web_search import search_web_impl
+from interior_studio.agent.tools.web_search import reset_web_search_guard, search_web_impl
 
 
 def test_search_web_impl_delegates_to_service(monkeypatch):
+    reset_web_search_guard()
     mock_search = MagicMock(
         return_value=json.dumps(
             {"ok": True, "query": "тест", "results": []},
@@ -23,6 +24,26 @@ def test_search_web_impl_delegates_to_service(monkeypatch):
 
     assert data["ok"] is True
     mock_search.assert_called_once_with("тест", max_results=3)
+
+
+def test_search_web_guard_blocks_second_call(monkeypatch):
+    reset_web_search_guard()
+    mock_search = MagicMock(
+        return_value=json.dumps(
+            {"ok": True, "query": "тест", "results": []},
+            ensure_ascii=False,
+        )
+    )
+    monkeypatch.setattr("interior_studio.agent.tools.web_search.search_web", mock_search)
+
+    search_web_impl(None, 111111111, "тест")
+    raw = search_web_impl(None, 111111111, "другой запрос")
+    data = json.loads(raw)
+
+    assert mock_search.call_count == 1
+    assert data["ok"] is False
+    assert "already called" in data["message"]
+    assert data["results"] == []
 
 
 def test_make_tools_includes_search_web(db_session):
