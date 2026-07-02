@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*.pyo
+.pytest_cache
+*.egg-info
+dist
+build
+
+# Виртуальные окружения
+venv/
+.venv/
+
+# Секреты — не попадают в образ, передаются через env_file на сервере
+.env
+.env.*
+!.env.example
+
+# Данные (монтируются как volume)
+data/studio.db
+data/chroma/
+
+# Cursor / IDE
+.cursor/
+
+# Тесты — не нужны в продакшн-образе
+tests/
+
+# Документация
+docs/
+agent-skills-main/
+deploy/README.md
+deploy/DOCKER.md
+deploy/interior-studio-bot.service

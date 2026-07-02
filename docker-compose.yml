@@ -1,0 +1,12 @@
+services:
+  bot:
+    build: .
+    image: interior-studio-bot
+    container_name: interior-studio-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # SQLite и Chroma сохраняются между перезапусками контейнера
+      - ./data:/app/data
+    # Порты не пробрасываем — бот работает через long polling, не webhook
