@@ -1,8 +1,8 @@
 # План: Interior Studio Assistant (срез 1 — MVP)
 
 > Спека: [`docs/specs/interior-studio-assistant.md`](../specs/interior-studio-assistant.md)  
-> Статус: **готов к реализации**  
-> Следующий шаг: `incremental-implementation` (задача 1)
+> Статус: **в работе** — задачи 1–11 ✅, 12 ⚠️ (ручной чеклист), 13 ⚠️ (артефакты готовы, VPS — вручную)  
+> Следующий шаг: ручная приёмка (задача 12) → деплой на Timeweb (задача 13)
 
 ---
 
@@ -35,16 +35,16 @@ flowchart TD
 **Описание:** Каркас пакета `interior_studio/`, зависимости, `config.py` с `USER_ALIASES` (Сеня/Рита), `LLM_PROVIDER` (openai/deepseek), `llm.py`, `.env.example`, `data/` в `.gitignore`, пустая структура тестов.
 
 **Критерии приёмки:**
-- [ ] Пакет импортируется: `python -c "import interior_studio"`
-- [ ] `config.py`: `ALLOWED_USER_IDS`, `USER_ALIASES`, `DATABASE_URL`, `LLM_PROVIDER`, DeepSeek/OpenAI vars из env
-- [ ] `llm.py`: `create_chat_llm()` — openai или deepseek по `LLM_PROVIDER`
-- [ ] Первый id в `TELEGRAM_ALLOWED_USER_IDS` → Сеня, второй → Рита
-- [ ] `requirements.txt` дополнен: `python-telegram-bot`, `apscheduler`, `sqlalchemy`, `pytest-asyncio`
-- [ ] `data/studio.db` в `.gitignore`
+- [x] Пакет импортируется: `python -c "import interior_studio"`
+- [x] `config.py`: `ALLOWED_USER_IDS`, `USER_ALIASES`, `DATABASE_URL`, `LLM_PROVIDER`, DeepSeek/OpenAI vars из env
+- [x] `llm.py`: `create_chat_llm()` — openai или deepseek по `LLM_PROVIDER`
+- [x] Первый id в `TELEGRAM_ALLOWED_USER_IDS` → Сеня, второй → Рита
+- [x] `requirements.txt` дополнен: `python-telegram-bot`, `apscheduler`, `sqlalchemy`, `pytest-asyncio`
+- [x] `data/studio.db` в `.gitignore`
 
 **Верификация:**
-- [ ] `pip install -r requirements.txt` без ошибок
-- [ ] `pytest tests/interior_studio/ -v` — 0 тестов, exit 0
+- [x] `pip install -r requirements.txt` без ошибок
+- [x] `pytest tests/interior_studio/ -v` — 0 тестов, exit 0
 
 **Зависимости:** нет
 
@@ -61,13 +61,13 @@ flowchart TD
 **Описание:** ORM-модели `User`, `Project`, `Task`, `SentReminder`; engine + session factory; `init_db` создаёт таблицы; `seed_projects` читает файл построчно.
 
 **Критерии приёмки:**
-- [ ] Модели соответствуют схеме из спеки §5
-- [ ] `python -m interior_studio.db.init_db` создаёт `data/studio.db`
-- [ ] `python -m interior_studio.db.seed_projects --file data/initial_projects.txt` — idempotent (повторный запуск не падает)
-- [ ] In-memory SQLite в `conftest` для тестов
+- [x] Модели соответствуют схеме из спеки §5
+- [x] `python -m interior_studio.db.init_db` создаёт `data/studio.db`
+- [x] `python -m interior_studio.db.seed_projects --file data/initial_projects.txt` — idempotent (повторный запуск не падает)
+- [x] In-memory SQLite в `conftest` для тестов
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_db.py -v`
+- [x] `pytest tests/interior_studio/test_db.py -v`
 
 **Зависимости:** Задача 1
 
@@ -82,14 +82,14 @@ flowchart TD
 **Описание:** `project_service` (list, create, find_by_name_prefix) и `user_context` (get/set active project, upsert user при первом обращении).
 
 **Критерии приёмки:**
-- [ ] `list_projects(status='active')` возвращает отсортированный список
-- [ ] `create_project(name)` — unique constraint → понятная ошибка
-- [ ] `find_matching_projects("Иванов")` → список кандидатов для disambiguation
-- [ ] `set_active_project(user_id, project_id)` обновляет `users.active_project_id`
-- [ ] `get_active_project(user_id)` → `{project_id, name}` или `null`
+- [x] `list_projects(status='active')` возвращает отсортированный список
+- [x] `create_project(name)` — unique constraint → понятная ошибка
+- [x] `find_matching_projects("Иванов")` → список кандидатов для disambiguation
+- [x] `set_active_project(user_id, project_id)` обновляет `users.active_project_id`
+- [x] `get_active_project(user_id)` → `{project_id, name}` или `null`
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_project_service.py -v`
+- [x] `pytest tests/interior_studio/test_project_service.py -v`
 
 **Зависимости:** Задача 2
 
@@ -105,14 +105,14 @@ flowchart TD
 **Описание:** `task_service` — create (batch), list (фильтры: project, mine_only, status, overdue, week), complete. Pydantic-схемы для входа batch.
 
 **Критерии приёмки:**
-- [ ] `create_tasks` создаёт N задач за один вызов; `assignee_user_id` и `due_date` опциональны
-- [ ] `list_tasks(mine_only=True)` — задачи где assignee или created_by = user
-- [ ] `list_tasks(overdue=True)` — open + due_date < today
-- [ ] `complete_task` → status=done, `completed_at` заполнен
-- [ ] Выборка для digest: overdue + today + week (методы для scheduler)
+- [x] `create_tasks` создаёт N задач за один вызов; `assignee_user_id` и `due_date` опциональны
+- [x] `list_tasks(mine_only=True)` — задачи где assignee или created_by = user
+- [x] `list_tasks(overdue=True)` — open + due_date < today
+- [x] `complete_task` → status=done, `completed_at` заполнен
+- [x] Выборка для digest: overdue + today + week (методы для scheduler)
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_task_service.py -v`
+- [x] `pytest tests/interior_studio/test_task_service.py -v`
 
 **Зависимости:** Задача 3
 
@@ -128,12 +128,12 @@ flowchart TD
 **Описание:** 7 tools в `agent/tools/`: projects + tasks. Factory `make_tools(session, user_id)` — closure для инъекции контекста. Return `json.dumps(..., ensure_ascii=False)`.
 
 **Критерии приёмки:**
-- [ ] Все 7 tools из спеки §7 зарегистрированы
-- [ ] `user_id` не передаётся LLM — подставляется из closure
-- [ ] Docstring на русском, args на английском (как в `airline_react_agent.py`)
+- [x] Все 7 tools из спеки §7 зарегистрированы
+- [x] `user_id` не передаётся LLM — подставляется из closure
+- [x] Docstring на русском, args на английском (как в `airline_react_agent.py`)
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_tools_projects.py tests/interior_studio/test_tools_tasks.py -v`
+- [x] `pytest tests/interior_studio/test_tools_projects.py tests/interior_studio/test_tools_tasks.py -v`
 
 **Зависимости:** Задача 4
 
@@ -148,13 +148,13 @@ flowchart TD
 **Описание:** `graph.py` — `create_studio_agent(tools, system_prompt)` по паттерну `airline_react_agent.py`. LLM через `create_chat_llm()` (`llm.py`). `prompt.py` — полный `STUDIO_SYSTEM_PROMPT` (дата, tools, Сеня/Рита, правила). `cli.py` — `--trace` для локальной отладки.
 
 **Критерии приёмки:**
-- [ ] Граф: `MessagesState`, `parallel_tool_calls=False`, recursion_limit=10
-- [ ] Промпт содержит user_id Сеня/Рита и правила batch `create_tasks`
-- [ ] CLI: `python -m interior_studio.agent.cli --trace "Покажи проекты"` — печатает TAO (при `DEEPSEEK_API_KEY` или `OPENAI_API_KEY` в `.env`)
+- [x] Граф: `MessagesState`, `parallel_tool_calls=False`, recursion_limit=10
+- [x] Промпт содержит user_id Сеня/Рита и правила batch `create_tasks`
+- [x] CLI: `python -m interior_studio.agent.cli --trace "Покажи проекты"` — печатает TAO (при `DEEPSEEK_API_KEY` или `OPENAI_API_KEY` в `.env`)
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_graph.py -v` (smoke: граф компилируется, mock invoke)
-- [ ] Ручная: CLI с одной фразой
+- [x] `pytest tests/interior_studio/test_graph.py -v` (smoke: граф компилируется, mock invoke)
+- [x] Ручная: CLI с одной фразой
 
 **Зависимости:** Задача 5
 
@@ -170,13 +170,13 @@ flowchart TD
 **Описание:** `bot/main.py` — Application, long polling. `session.py` — история messages per user (лимит 20). Text handler → agent → ответ. Whitelist: чужие id игнорируются.
 
 **Критерии приёмки:**
-- [ ] Только `TELEGRAM_ALLOWED_USER_IDS` могут писать боту
-- [ ] Текстовое сообщение → ответ агента на русском
-- [ ] История диалога сохраняется в рамках сессии процесса
-- [ ] При первом сообщении — upsert user в БД
+- [x] Только `TELEGRAM_ALLOWED_USER_IDS` могут писать боту
+- [x] Текстовое сообщение → ответ агента на русском
+- [x] История диалога сохраняется в рамках сессии процесса
+- [x] При первом сообщении — upsert user в БД
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_bot_handlers.py -v` (mock Update/Context)
+- [x] `pytest tests/interior_studio/test_bot_handlers.py -v` (mock Update/Context)
 - [ ] Ручная: написать боту «Покажи проекты» в Telegram
 
 **Зависимости:** Задача 6
@@ -192,13 +192,13 @@ flowchart TD
 **Описание:** Логика disambiguation в bot-слое (до/после агента): при нескольких совпадениях — inline-кнопки для текста, текстовый вопрос для голоса; состояние pending в session (30 мин); приоритет active project.
 
 **Критерии приёмки:**
-- [ ] Текст + 2 проекта «Ивановы*» → сообщение с inline-кнопками, без `create_tasks` до выбора
-- [ ] Callback по кнопке → продолжение с выбранным `project_id`
-- [ ] Голос + неоднозначность → текстовый вопрос (без кнопок)
-- [ ] Active project среди кандидатов → без вопроса
+- [x] Текст + 2 проекта «Ивановы*» → сообщение с inline-кнопками, без `create_tasks` до выбора
+- [x] Callback по кнопке → продолжение с выбранным `project_id`
+- [x] Голос + неоднозначность → текстовый вопрос (без кнопок)
+- [x] Active project среди кандидатов → без вопроса
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_disambiguation.py -v`
+- [x] `pytest tests/interior_studio/test_disambiguation.py -v`
 - [ ] Ручная: seed двух «Ивановы» / «Ивановы дача»
 
 **Зависимости:** Задача 7
@@ -214,13 +214,13 @@ flowchart TD
 **Описание:** `bot/voice.py` — скачать `voice.ogg`, OpenAI Whisper, передать transcript в агент. Ошибка → «Не разобрал голосовое, напиши текстом».
 
 **Критерии приёмки:**
-- [ ] Voice handler подключён в `main.py`
-- [ ] Успешный путь: voice → текст → тот же flow, что и text
-- [ ] Whisper error / пустой transcript → дружелюбное сообщение
-- [ ] Флаг `is_voice=True` в session для disambiguation (задача 8)
+- [x] Voice handler подключён в `main.py`
+- [x] Успешный путь: voice → текст → тот же flow, что и text
+- [x] Whisper error / пустой transcript → дружелюбное сообщение
+- [x] Флаг `is_voice=True` в session для disambiguation (задача 8)
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_voice_pipeline.py -v` (mock OpenAI)
+- [x] `pytest tests/interior_studio/test_voice_pipeline.py -v` (mock OpenAI)
 - [ ] Ручная: голосовое «По Ивановым заказать плитку»
 
 **Зависимости:** Задача 8
@@ -236,13 +236,13 @@ flowchart TD
 **Описание:** `scheduler/jobs.py` — `morning_digest`, `deadline_reminder`; `AsyncIOScheduler` стартует в `bot/main.py` (Europe/Moscow, 09:00). Запись в `sent_reminders` против дублей.
 
 **Критерии приёмки:**
-- [ ] `morning_digest` шлёт каждому user: overdue + today + week
-- [ ] `deadline_reminder` — задачи с due=tomorrow, один раз per task
-- [ ] Без assignee → уведомление обоим
-- [ ] Scheduler живёт в том же процессе, что бот
+- [x] `morning_digest` шлёт каждому user: overdue + today + week
+- [x] `deadline_reminder` — задачи с due=tomorrow, один раз per task
+- [x] Без assignee → уведомление обоим
+- [x] Scheduler живёт в том же процессе, что бот
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_scheduler.py -v`
+- [x] `pytest tests/interior_studio/test_scheduler.py -v`
 - [ ] Ручная: временно cron `* * * * *` или вызов job вручную
 
 **Зависимости:** Задача 7 (нужен bot Application для send_message)
@@ -259,12 +259,12 @@ flowchart TD
 **Описание:** `test_tool_calling.py` — 11 кейсов из спеки §12; mock LLM возвращает ожидаемые `tool_calls`; проверка, что агент вызывает правильный tool (не текст «я бы создала»).
 
 **Критерии приёмки:**
-- [ ] Все 11 кейсов проходят на mock
-- [ ] Кейсы 10–11: disambiguation без tool до выбора
-- [ ] Опционально `@pytest.mark.live` для 2–3 фраз с реальным OpenAI (документировано в README тестов)
+- [x] Все 11 кейсов проходят на mock
+- [x] Кейсы 10–11: disambiguation без tool до выбора
+- [x] Опционально `@pytest.mark.live` для 2–3 фраз с реальным OpenAI (документировано в README тестов)
 
 **Верификация:**
-- [ ] `pytest tests/interior_studio/test_tool_calling.py -v`
+- [x] `pytest tests/interior_studio/test_tool_calling.py -v`
 
 **Зависимости:** Задача 6
 
@@ -278,12 +278,12 @@ flowchart TD
 **Описание:** Прогон всех тестов; чеклист ручной приёмки; happy path end-to-end в Telegram.
 
 **Критерии приёмки:**
-- [ ] `pytest tests/interior_studio/ -v` — зелёный
+- [x] `pytest tests/interior_studio/ -v` — зелёный (55 passed)
 - [ ] Happy path: голос Риты → 3 задачи по Ивановым, assignee Сеня на одной
 - [ ] Все пункты §14 спеки отмечены или задокументированы исключения
 
 **Верификация:**
-- [ ] Полный pytest
+- [x] Полный pytest
 - [ ] Ручной чеклист (ниже)
 
 **Зависимости:** Задачи 9, 10, 11
@@ -298,11 +298,11 @@ flowchart TD
 **Описание:** Артефакты деплоя и выкладка бота на продакшен. Провайдер — Timeweb Cloud, сервис «Облачные серверы», Ubuntu 22.04/24.04. Один systemd unit для `bot/main` + scheduler (спека §13.1).
 
 **Критерии приёмки:**
-- [ ] `deploy/interior-studio-bot.service` — unit с `Restart=on-failure`, `EnvironmentFile`, непривилегированный `User`
-- [ ] `deploy/README.md` — пошагово: создание VPS в Timeweb, SSH, venv, `.env`, `init_db`, `seed_projects`, systemd, redeploy, бэкап `studio.db`
+- [x] `deploy/interior-studio-bot.service` — unit с `Restart=on-failure`, `EnvironmentFile`, непривилегированный `User`
+- [x] `deploy/README.md` — пошагово: создание VPS в Timeweb, SSH, venv, `.env`, `init_db`, `seed_projects`, systemd, redeploy, бэкап `studio.db`
 - [ ] VPS создан (мин. 1 vCPU / 1 GB RAM); бот отвечает в Telegram с продакшена
 - [ ] `systemctl enable` — автозапуск после ребута сервера
-- [ ] Входящие порты не открыты (long polling, не webhook)
+- [x] Входящие порты не открыты (long polling, не webhook) — задокументировано в deploy/README
 
 **Верификация:**
 - [ ] `systemctl status interior-studio-bot` — active (running)

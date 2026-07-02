@@ -142,7 +142,6 @@ def complete_task(session: Session, user_id: int, task_id: int) -> CompleteTaskR
 
     task.status = "done"
     task.completed_at = datetime.datetime.utcnow().isoformat(timespec="seconds")
-    session.flush()
     return CompleteTaskResult(ok=True, task=_task_to_out(task))
 
 

@@ -9,6 +9,8 @@ from sqlalchemy.pool import StaticPool
 
 from interior_studio.db.connection import init_schema
 
+pytest_plugins = ["tests.interior_studio.knowledge_fixtures"]
+
 
 @pytest.fixture
 def db_engine():

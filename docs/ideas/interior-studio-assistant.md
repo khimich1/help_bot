@@ -85,7 +85,7 @@ voice.ogg → Whisper → HumanMessage → agent.invoke()
 
 **Срез 2:** `generate_client_report` (5 блоков)
 
-**Срез 3:** RAG + Яндекс.Диск (детали и доступ — позже)
+**Срез 3:** RAG «Справочник» — см. [`interior-studio-knowledge.md`](interior-studio-knowledge.md); Яндекс.Диск API — срез 3.1
 
 ## Not Doing (и почему)
 
@@ -102,8 +102,7 @@ voice.ogg → Whisper → HumanMessage → agent.invoke()
 
 ## Открытые вопросы
 
-- Типы файлов и структура папок на Яндекс.Диске (для среза 3)
-- Способ получения доступа к Яндекс.Диску API
+- Способ получения доступа к Яндекс.Диску API (срез 3.1)
 - Human gate с inline-кнопками — нужен ли в v1.1
 - Конкретный хостинг VPS (провайдер)
 

@@ -1,0 +1,24 @@
+[Unit]
+Description=Interior Studio Telegram Bot (long polling + scheduler)
+Documentation=file:///opt/interior-studio/deploy/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=interior
+Group=interior
+WorkingDirectory=/opt/interior-studio
+EnvironmentFile=/opt/interior-studio/.env
+ExecStart=/opt/interior-studio/venv/bin/python -m interior_studio.bot.main
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Graceful stop: python-telegram-bot handles SIGTERM on run_polling shutdown
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -44,3 +44,40 @@ def test_complete_task_tool(db_session):
     data = json.loads(raw)
     assert data["ok"] is True
     assert data["task"]["status"] == "done"
+
+
+def test_parallel_complete_task_tool_calls(db_session):
+    """ToolNode может вызывать complete_task параллельно — session должна выдержать."""
+    import concurrent.futures
+
+    from interior_studio.schemas.task import TaskInput
+    from interior_studio.services import task_service
+
+    p = project_service.create_project(db_session, "Ивановы")
+    created = task_service.create_tasks(
+        db_session,
+        p.id,
+        [
+            TaskInput(title="Задача 1"),
+            TaskInput(title="Задача 2"),
+            TaskInput(title="Задача 3"),
+        ],
+        created_by=111111111,
+    )
+    db_session.commit()
+    task_ids = [t.id for t in created.created]
+
+    tools = make_tools(db_session, user_id=111111111)
+    complete_tool = next(t for t in tools if t.name == "complete_task")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+        futures = [
+            pool.submit(complete_tool.invoke, {"task_id": task_id})
+            for task_id in task_ids
+        ]
+        results = [json.loads(f.result()) for f in futures]
+
+    assert all(r["ok"] for r in results)
+    db_session.commit()
+    open_tasks = task_service.list_tasks(db_session, 111111111, project_id=p.id, status="open")
+    assert open_tasks == []

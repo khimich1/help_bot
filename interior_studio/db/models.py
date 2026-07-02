@@ -40,6 +40,23 @@ class Project(Base):
     )
 
     tasks: Mapped[list["Task"]] = relationship("Task", back_populates="project")
+    knowledge_source: Mapped["ProjectKnowledgeSource | None"] = relationship(
+        "ProjectKnowledgeSource", back_populates="project", uselist=False
+    )
+
+
+class ProjectKnowledgeSource(Base):
+    __tablename__ = "project_knowledge_sources"
+
+    project_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("projects.id"), primary_key=True
+    )
+    local_path: Mapped[str] = mapped_column(String, nullable=False)
+    indexed_at: Mapped[str | None] = mapped_column(String, nullable=True)
+    chunk_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    disk_path: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    project: Mapped["Project"] = relationship("Project", back_populates="knowledge_source")
 
 
 class Task(Base):

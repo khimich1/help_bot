@@ -22,6 +22,16 @@ DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/studio.db")
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "whisper-1")
 
+# Project knowledge (RAG)
+CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./data/chroma")
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "openai").strip().lower()
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+LOCAL_EMBEDDING_MODEL = os.getenv(
+    "LOCAL_EMBEDDING_MODEL",
+    "paraphrase-multilingual-MiniLM-L12-v2",
+)
+KNOWLEDGE_TOP_K = int(os.getenv("KNOWLEDGE_TOP_K", "5"))
+
 
 def _parse_allowed_user_ids() -> list[int]:
     raw = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "111111111,222222222")

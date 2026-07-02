@@ -9,3 +9,7 @@ apscheduler>=3.10
 pytest
 pytest-asyncio
 openai
+chromadb>=0.5
+python-docx>=1.0
+pymupdf>=1.24
+sentence-transformers>=3.0
